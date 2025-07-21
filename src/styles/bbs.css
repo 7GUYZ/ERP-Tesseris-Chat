@@ -1,0 +1,22 @@
+.bbs-main-div {
+    margin: 10px auto;
+    height: 600px;
+    width: 700px;
+    overflow-y: auto;
+    border: 1px solid none;
+    padding: 0px;
+}
+
+.bbs-main-div table {
+    padding: 0;
+    box-sizing: border-box;
+    width: 680px;
+}
+
+.bbs-button {
+    margin: 0 auto;
+    width: 700px;
+    padding: 10px;
+    display: flex;
+    justify-content: center;
+}

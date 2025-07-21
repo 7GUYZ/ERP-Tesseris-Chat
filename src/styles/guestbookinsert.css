@@ -1,0 +1,35 @@
+.guestbook-insert-div {
+    display: flex;
+    flex-direction: column;
+    margin: 150px auto;
+    padding: 30px;
+    text-align: center;
+    max-width: 450px;
+    border: 1px solid black;
+}
+
+.guestbook-insert-button {
+    display: flex;
+    justify-content: space-between;
+    gap: 50px;
+}
+
+.guestbook-insert-button button {
+    margin: 10px auto;
+    width: 100%;
+    cursor: pointer;
+    padding: 5px;
+}
+
+.guestbook-insert-div input {
+    width: 100%;
+    margin: 10px auto;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.guestbook-insert-div label {
+    width: 100%;
+    box-sizing: border-box;
+    font-weight: bold;
+}

@@ -1,0 +1,38 @@
+.bbsinsert-main-div{
+    display: flex;
+    flex-direction: column;
+    margin: 50px auto;
+    outline: 1px dashed red;
+    justify-content: center;
+    text-align: center;
+    width: 600px;
+    padding: 10px;
+}
+.bbsinsert-main-div form input{
+    margin: 10px auto;
+    width: 400px;
+    padding: 5px;
+}
+.bbsinsert-main-div label{
+    font-weight: bold;
+    margin: 3px auto;
+}
+.bbsinsert-button{
+    display: flex;
+    flex-direction: row;
+    gap: 15px;
+}
+.bbsinsert-button button{
+    width: 50%;
+    padding: 5px;
+    cursor: pointer;
+    background: none;
+    border: none;
+}
+.bbsinsert-button button:hover{
+    background-color: violet;
+}
+form{
+    display: flex;
+    flex-direction: column;
+}

@@ -1,0 +1,42 @@
+.header {
+    border-bottom: 1px solid #ddd;
+    padding: 10px 0px;
+    background-color: #fff;
+}
+
+.header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0px auto;
+    padding: 0px 20px;
+}
+
+.header-left,
+.header-center,
+.header-right {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.header-center,
+.header-right {
+    justify-content: center;
+    gap: 30px;
+}
+
+.logo-image {
+    height: 30px;
+}
+
+.header a {
+    text-decoration: none;
+    color: violet;
+}
+
+.logo-link {
+    display: flex;
+    align-items: center;
+}

@@ -1,0 +1,28 @@
+.guestbook-main-div{
+    text-align: center;
+    width: 100%;
+    margin: 0 auto;
+    max-height: 500px;
+    overflow-y: auto;
+}
+table{
+    border: 1px solid black;
+    text-align: center;
+    align-content: center;
+    width: 80%;
+    margin: 0 auto;
+    border-collapse: collapse;
+}
+th,td{
+    border: 1px solid black;
+    text-align: center;
+}
+a{
+    text-decoration: none;
+    color: black;
+}
+.guestbook-main-div button{
+    width: 80%;
+    margin: 10px auto;
+    padding: 5px;
+}

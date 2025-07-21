@@ -1,0 +1,21 @@
+.mypage-maincontainer-div{
+    display: flex;
+    flex-direction: column;
+    width: 500px;
+    text-align: center;
+    margin: 60px auto;
+    border: 1px solid black;
+    padding: 20px;
+    box-sizing: border-box;
+}
+.mypage-maincontainer-div input{
+    text-align: center;
+    padding: 5px;
+    margin-bottom: 20px;
+}
+.mypage-maincontainer-div label{
+    text-align: center;
+    padding: 5px;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
