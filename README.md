@@ -1,97 +1,120 @@
-# Getting Started with Create React App
+# ERP 실시간 채팅 서버 🚀
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+ERP 시스템을 위한 실시간 채팅 서버입니다. Socket.IO를 사용하여 웹소켓 기반의 실시간 통신을 제공합니다.
 
-## 서버 설정
+## 🛠️ 설치 및 실행
 
-### 환경변수 설정
-프로젝트 루트에 `.env.local` 파일을 생성하고 다음 내용을 추가하세요:
-
-```
-# 개발 환경 (로컬)
-REACT_APP_SERVER_URL=http://localhost:8088
-
-# 운영 환경 (실제 서버 IP)
-# REACT_APP_SERVER_URL=http://192.168.0.10:8088
+### 의존성 설치
+```bash
+npm install
 ```
 
-### Spring Boot 서버 설정
-`application.properties` 또는 `application.yml`에서 다음 설정을 확인하세요:
-
-```properties
-spring.application.name=edu03
-spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-logging.level.org.springframework.web.socket=DEBUG
-logging.level.org.springframework.messaging=DEBUG
-server.port=8088
-server.address=0.0.0.0
+### 개발 모드로 실행 (nodemon 사용)
+```bash
+npm run dev
 ```
 
-**중요**: `server.address=0.0.0.0`으로 설정하면 모든 네트워크 인터페이스에서 접근 가능합니다.
+### 프로덕션 모드로 실행
+```bash
+npm start
+```
 
-## Available Scripts
+## 📋 주요 기능
 
-In the project directory, you can run:
+- ✅ 실시간 메시지 송수신
+- ✅ 사용자 온라인 상태 관리
+- ✅ 입장/퇴장 알림
+- ✅ 채팅방 관리
+- ✅ 타이핑 상태 표시
+- ✅ CORS 설정으로 안전한 연결
+- ✅ 서버 상태 모니터링 API
 
-### `npm start`
+## 🌐 API 엔드포인트
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### GET /
+서버 기본 정보 확인
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### GET /status
+서버 상태 및 연결된 사용자 정보 확인
 
-### `npm test`
+## 🔧 환경 설정
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+`.env` 파일을 생성하여 환경 변수를 설정할 수 있습니다:
 
-### `npm run build`
+```env
+PORT=4000
+CORS_ORIGIN=http://localhost:3000,http://localhost:3001
+NODE_ENV=development
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 📡 Socket.IO 이벤트
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 클라이언트 → 서버
+- `sendMessage`: 메시지 전송
+- `joinRoom`: 특정 채팅방 참여
+- `typing`: 타이핑 상태 전송
+- `userLeave`: 사용자 퇴장
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 서버 → 클라이언트
+- `message`: 새 메시지 수신
+- `userJoined`: 새 사용자 입장
+- `userLeft`: 사용자 퇴장
+- `onlineUsers`: 온라인 사용자 목록 업데이트
+- `userTyping`: 다른 사용자 타이핑 상태
 
-### `npm run eject`
+## 🚀 배포
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### PM2 사용 (권장)
+```bash
+npm install -g pm2
+pm2 start server.js --name "chat-server"
+pm2 save
+pm2 startup
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Docker 사용
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --production
+COPY . .
+EXPOSE 4000
+CMD ["npm", "start"]
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## 📞 연결 정보
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+- **기본 포트**: 4000
+- **WebSocket 엔드포인트**: `ws://localhost:4000`
+- **HTTP 엔드포인트**: `http://localhost:4000`
 
-## Learn More
+## 🐛 문제 해결
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### 포트 충돌 시
+```bash
+# 포트 사용 확인
+netstat -tulpn | grep :4000
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+# 다른 포트로 실행
+PORT=5000 npm start
+```
 
-### Code Splitting
+### CORS 오류 시
+`server.js`의 CORS 설정에서 클라이언트 주소를 확인하세요.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## 📝 로그 확인
 
-### Analyzing the Bundle Size
+서버 실행 시 다음과 같은 로그가 표시됩니다:
+- 🚀 사용자 연결
+- 👋 사용자 입장/퇴장
+- 💬 메시지 전송
+- ❌ 에러 발생
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## 🤝 기여하기
 
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request 
