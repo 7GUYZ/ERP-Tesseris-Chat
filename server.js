@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
+const axios = require('axios');
 
 const app = express();
 const server = http.createServer(app);
@@ -172,7 +173,7 @@ io.on('connection', (socket) => {
   });
 
   // 🏠 채팅방 생성
-  socket.on('createRoom', (roomData) => {
+  socket.on('createRoom', async (roomData) => {
     const roomId = roomData.id || `room_${Date.now()}`;
     const room = {
       id: roomId,
@@ -194,6 +195,13 @@ io.on('connection', (socket) => {
     io.emit('roomList', Array.from(chatRooms.values()));
     
     socket.emit('roomCreated', room);
+    try {
+      const response = await axios.post('http://localhost:19091/api/adminchat/roomcreate', room);
+      console.log('🏠 채팅방 생성 응답:', response.data);
+      socket.emit('roomCreated', response.data);
+    } catch (error) {
+      console.error('채팅방 생성 오류:', error);
+    }
   });
 
   // 🚪 채팅방 입장
