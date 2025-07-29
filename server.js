@@ -7,27 +7,28 @@ const axios = require('axios');
 const app = express();
 const server = http.createServer(app);
 
-// CORS 설정 - ERP 프로젝트의 주소를 허용 (기존 설정 유지)
+// CORS 설정 - 운영 환경과 개발 환경 모두 허용
+const allowedOrigins = [
+  // 개발 환경
+  "http://localhost:3000",
+  "http://localhost:3001", 
+  "http://localhost:5173",
+  "http://127.0.0.1:3000",
+  // 운영 환경
+  "https://kschost.ddns.net",
+  "http://kschost.ddns.net"
+];
+
 const io = socketIo(server, {
   cors: {
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:3001", 
-      "http://localhost:5173",
-      "http://127.0.0.1:3000"
-    ], // React 개발 서버 주소들
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true
   }
 });
 
 app.use(cors({
-  origin: [
-    "http://localhost:3000",
-    "http://localhost:3001", 
-    "http://localhost:5173",
-    "http://127.0.0.1:3000"
-  ],
+  origin: allowedOrigins,
   credentials: true
 }));
 
@@ -196,7 +197,8 @@ io.on('connection', (socket) => {
     
     socket.emit('roomCreated', room);
     try {
-      const response = await axios.post('http://localhost:19091/api/adminchat/roomcreate', room);
+      const SPRINGBOOT_SERVICE_URL = process.env.SPRINGBOOT_SERVICE_URL || 'http://localhost:19091';
+      const response = await axios.post(`${SPRINGBOOT_SERVICE_URL}/api/adminchat/roomcreate`, room);
       console.log('🏠 채팅방 생성 응답:', response.data);
       socket.emit('roomCreated', response.data);
     } catch (error) {
