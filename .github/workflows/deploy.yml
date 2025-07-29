@@ -1,0 +1,106 @@
+name: Deploy Chat Server to Kubernetes
+
+on:
+  push:
+    branches:
+      [ main, sichan ]  # 배포할 브랜치들
+    paths:
+      - 'ERP-Tesseris-Chat/**'  # Chat 디렉토리 변경시에만 실행
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ERP-Tesseris-Chat
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: './ERP-Tesseris-Chat/package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          logout: false
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./ERP-Tesseris-Chat
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/erp-tesseris-chat:${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/erp-tesseris-chat:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Set up Kubeconfig
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'latest'
+
+      - name: Configure Kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Replace image tag and apply deployment
+        run: |
+          # 이미지 태그 교체
+          sed "s#__DOCKER_IMAGE__#${{ secrets.DOCKER_USERNAME }}/erp-tesseris-chat#g" my-k8s-app/final/chat_deployment.yaml | \
+          sed "s#__TAG__#${{ github.sha }}#g" > my-k8s-app/final/chat_deployment.generated.yaml
+
+          # 배포 적용
+          kubectl apply -f my-k8s-app/final/chat_deployment.generated.yaml
+
+      - name: Apply service
+        run: |
+          kubectl apply -f my-k8s-app/final/chat_service.yaml
+
+      - name: Apply ingress (optional)
+        run: |
+          kubectl apply -f my-k8s-app/final/chat_ingress.yaml
+        continue-on-error: true
+
+      - name: Wait for deployment
+        run: |
+          kubectl rollout status deployment/erp-tesseris-chat --timeout=300s
+
+      - name: Check deployment status
+        run: |
+          echo "=== Pod Status ==="
+          kubectl get pods -l app=erp-tesseris-chat
+          
+          echo "=== Service Status ==="
+          kubectl get services -l app=erp-tesseris-chat
+          
+          echo "=== Deployment Status ==="
+          kubectl get deployment erp-tesseris-chat
+
+      - name: Health check
+        run: |
+          # 포트 포워딩으로 헬스체크
+          kubectl port-forward service/chat-service 4000:4000 &
+          sleep 10
+          
+          # 헬스체크 요청
+          curl -f http://localhost:4000/status || exit 1
+          
+          # 포트 포워딩 프로세스 종료
+          pkill -f "kubectl port-forward" 

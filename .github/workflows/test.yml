@@ -1,0 +1,76 @@
+name: Test Chat Server
+
+on:
+  pull_request:
+    branches: [ main, master, develop ]
+    paths:
+      - 'ERP-Tesseris-Chat/**'
+  push:
+    branches: [ main, master, develop ]
+    paths:
+      - 'ERP-Tesseris-Chat/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ERP-Tesseris-Chat
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: './ERP-Tesseris-Chat/package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: |
+          # ESLint가 있다면 실행
+          if [ -f "package.json" ] && grep -q "eslint" package.json; then
+            npm run lint
+          else
+            echo "ESLint not configured, skipping linting"
+          fi
+
+      - name: Run tests
+        run: |
+          # 테스트 스크립트가 있다면 실행
+          if [ -f "package.json" ] && grep -q "test" package.json; then
+            npm test
+          else
+            echo "No test script found, skipping tests"
+          fi
+
+      - name: Security audit
+        run: npm audit --audit-level=moderate
+
+      - name: Build Docker image (test)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./ERP-Tesseris-Chat
+          push: false
+          tags: erp-tesseris-chat:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Test Docker image
+        run: |
+          # Docker 이미지가 제대로 빌드되었는지 확인
+          docker run --rm -d --name test-chat -p 4000:4000 erp-tesseris-chat:test
+          
+          # 서버가 시작될 때까지 대기
+          sleep 10
+          
+          # 헬스체크
+          curl -f http://localhost:4000/status || exit 1
+          
+          # 컨테이너 정리
+          docker stop test-chat 
