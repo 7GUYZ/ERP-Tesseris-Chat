@@ -71,11 +71,6 @@ jobs:
         run: |
           kubectl apply -f my-k8s-app/final/chat_service.yaml
 
-      - name: Apply ingress (optional)
-        run: |
-          kubectl apply -f my-k8s-app/final/chat_ingress.yaml
-        continue-on-error: true
-
       - name: Wait for deployment
         run: |
           kubectl rollout status deployment/erp-tesseris-chat --timeout=300s
