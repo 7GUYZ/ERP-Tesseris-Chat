@@ -7,11 +7,19 @@ WORKDIR /app
 # package.json과 package-lock.json 복사
 COPY package*.json ./
 
-# 의존성 설치
-RUN npm ci --only=production
+# 의존성 설치 (개발 의존성도 포함하여 빌드 최적화)
+RUN npm ci
 
 # 소스 코드 복사
 COPY . .
+
+# 보안을 위한 non-root 사용자 생성
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nodejs -u 1001
+
+# 파일 소유권 변경
+RUN chown -R nodejs:nodejs /app
+USER nodejs
 
 # 포트 노출 (기본 포트 4000)
 EXPOSE 4000
