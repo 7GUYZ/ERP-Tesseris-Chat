@@ -3,9 +3,7 @@ name: Deploy Chat Server to Kubernetes
 on:
   push:
     branches:
-      [ main, sichan ]  # 배포할 브랜치들
-    paths:
-      - 'ERP-Tesseris-Chat/**'  # Chat 디렉토리 변경시에만 실행
+      [ main, sichan ]  # 또는 배포 브랜치명
 
 jobs:
   build-and-deploy:
