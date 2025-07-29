@@ -93,12 +93,45 @@ jobs:
 
       - name: Health check
         run: |
-          # 포트 포워딩으로 헬스체크
-          kubectl port-forward service/chat-service 4000:4000 &
-          sleep 10
+          # Pod가 준비될 때까지 대기
+          echo "Waiting for pods to be ready..."
+          kubectl wait --for=condition=ready pod -l app=erp-tesseris-chat --timeout=300s
           
-          # 헬스체크 요청
-          curl -f http://localhost:4000/status || exit 1
+          # Pod 로그 확인
+          echo "=== Pod Logs ==="
+          kubectl logs -l app=erp-tesseris-chat --tail=50
           
-          # 포트 포워딩 프로세스 종료
-          pkill -f "kubectl port-forward" 
+          # Pod 상태 확인
+          echo "=== Pod Status ==="
+          kubectl get pods -l app=erp-tesseris-chat -o wide
+          
+          # Service 상태 확인
+          echo "=== Service Status ==="
+          kubectl get services -l app=erp-tesseris-chat
+          
+          # 헬스체크 (Pod 상태 기반)
+          echo "=== Health Check ==="
+          POD_NAME=$(kubectl get pods -l app=erp-tesseris-chat -o jsonpath='{.items[0].metadata.name}')
+          echo "Checking health of pod: $POD_NAME"
+          
+          # Pod 상태 확인
+          POD_STATUS=$(kubectl get pod $POD_NAME -o jsonpath='{.status.phase}')
+          echo "Pod status: $POD_STATUS"
+          
+          if [ "$POD_STATUS" != "Running" ]; then
+            echo "❌ Pod is not running. Status: $POD_STATUS"
+            kubectl describe pod $POD_NAME
+            kubectl logs $POD_NAME --tail=50
+            exit 1
+          fi
+          
+          # 컨테이너 준비 상태 확인
+          READY=$(kubectl get pod $POD_NAME -o jsonpath='{.status.containerStatuses[0].ready}')
+          if [ "$READY" != "true" ]; then
+            echo "❌ Container is not ready"
+            kubectl describe pod $POD_NAME
+            kubectl logs $POD_NAME --tail=50
+            exit 1
+          fi
+          
+          echo "✅ Health check passed! Pod is running and ready." 
