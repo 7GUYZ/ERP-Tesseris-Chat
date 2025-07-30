@@ -1,0 +1,132 @@
+name: Deploy Chat Server to Kubernetes
+
+on:
+  push:
+    branches:
+      [ main, sichan ]  # 또는 배포 브랜치명
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: './package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          logout: false
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/erp-tesseris-chat:${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/erp-tesseris-chat:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Set up Kubeconfig
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'latest'
+
+      - name: Configure Kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Replace image tag and apply deployment
+        run: |
+          # 이미지 태그 교체
+          sed "s#__DOCKER_IMAGE__#${{ secrets.DOCKER_USERNAME }}/erp-tesseris-chat#g" my-k8s-app/final/chat_deployment.yaml | \
+          sed "s#__TAG__#${{ github.sha }}#g" > my-k8s-app/final/chat_deployment.generated.yaml
+
+          # 배포 적용
+          kubectl apply -f my-k8s-app/final/chat_deployment.generated.yaml
+
+      - name: Apply service
+        run: |
+          kubectl apply -f my-k8s-app/final/chat_service.yaml
+
+      - name: Wait for deployment
+        run: |
+          kubectl rollout status deployment/erp-tesseris-chat --timeout=300s
+
+      - name: Check deployment status
+        run: |
+          echo "=== Pod Status ==="
+          kubectl get pods -l app=erp-tesseris-chat
+          
+          echo "=== Service Status ==="
+          kubectl get services -l app=erp-tesseris-chat
+          
+          echo "=== Deployment Status ==="
+          kubectl get deployment erp-tesseris-chat
+
+      - name: Health check
+        run: |
+          # Pod가 준비될 때까지 대기
+          echo "Waiting for pods to be ready..."
+          kubectl wait --for=condition=ready pod -l app=erp-tesseris-chat --timeout=300s
+          
+          # Pod 로그 확인
+          echo "=== Pod Logs ==="
+          kubectl logs -l app=erp-tesseris-chat --tail=50
+          
+          # Pod 상태 확인
+          echo "=== Pod Status ==="
+          kubectl get pods -l app=erp-tesseris-chat -o wide
+          
+          # Service 상태 확인
+          echo "=== Service Status ==="
+          kubectl get services -l app=erp-tesseris-chat
+          
+          # 헬스체크 (Pod 상태 기반)
+          echo "=== Health Check ==="
+          POD_NAME=$(kubectl get pods -l app=erp-tesseris-chat -o jsonpath='{.items[0].metadata.name}')
+          echo "Checking health of pod: $POD_NAME"
+          
+          # Pod 상태 확인
+          POD_STATUS=$(kubectl get pod $POD_NAME -o jsonpath='{.status.phase}')
+          echo "Pod status: $POD_STATUS"
+          
+          if [ "$POD_STATUS" != "Running" ]; then
+            echo "❌ Pod is not running. Status: $POD_STATUS"
+            kubectl describe pod $POD_NAME
+            kubectl logs $POD_NAME --tail=50
+            exit 1
+          fi
+          
+          # 컨테이너 준비 상태 확인
+          READY=$(kubectl get pod $POD_NAME -o jsonpath='{.status.containerStatuses[0].ready}')
+          if [ "$READY" != "true" ]; then
+            echo "❌ Container is not ready"
+            kubectl describe pod $POD_NAME
+            kubectl logs $POD_NAME --tail=50
+            exit 1
+          fi
+          
+          echo "✅ Health check passed! Pod is running and ready." 
